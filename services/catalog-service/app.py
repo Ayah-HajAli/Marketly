@@ -13,7 +13,7 @@ Run standalone:
     python -m venv venv && source venv/bin/activate
     pip install -r requirements.txt
     python app.py
-Listens on :5002
+Listens on :5102
 """
 import os
 import sqlite3
@@ -315,4 +315,4 @@ def adjust_stock(product_id):
 
 if __name__ == "__main__":
     init_db()
-    app.run(host="0.0.0.0", port=5002)
+    app.run(host="0.0.0.0", port=5102)

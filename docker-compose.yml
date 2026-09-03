@@ -1,0 +1,58 @@
+services:
+
+  auth-service:
+    build:
+      context: ./services/auth-service
+    container_name: capstone-auth
+    environment:
+      SHARED_SECRET: dev-shared-secret-change-me
+      CORS_ALLOWED_ORIGIN: http://localhost:8090
+      COOKIE_SECURE: "false"
+    ports:
+      - "5101:5101"
+    networks:
+      - backend
+
+  catalog-service:
+    build:
+      context: ./services/catalog-service
+    container_name: capstone-catalog
+    environment:
+      SHARED_SECRET: dev-shared-secret-change-me
+      CORS_ALLOWED_ORIGIN: http://localhost:8090
+    ports:
+      - "5102:5102"
+    networks:
+      - backend
+
+  orders-service:
+    build:
+      context: ./services/orders-service
+    container_name: capstone-orders
+    environment:
+      SHARED_SECRET: dev-shared-secret-change-me
+      CATALOG_SERVICE_URL: http://catalog-service:5102
+      CORS_ALLOWED_ORIGIN: http://localhost:8090
+    ports:
+      - "5103:5103"
+    depends_on:
+      - catalog-service
+    networks:
+      - backend
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: capstone-frontend
+    ports:
+      - "8090:80"
+    depends_on:
+      - auth-service
+      - catalog-service
+      - orders-service
+    networks:
+      - backend
+
+networks:
+  backend:
+    driver: bridge

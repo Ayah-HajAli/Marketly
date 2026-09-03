@@ -13,7 +13,7 @@ Run standalone:
     python -m venv venv && source venv/bin/activate
     pip install -r requirements.txt
     python app.py
-Listens on :5003. Requires catalog-service running (default http://localhost:5002).
+Listens on :5103. Requires catalog-service running (default http://localhost:5102).
 """
 import os
 import sqlite3
@@ -28,7 +28,7 @@ app = Flask(__name__)
 
 DB_PATH = os.environ.get("ORDERS_DB_PATH", os.path.join(os.path.dirname(__file__), "orders.db"))
 SHARED_SECRET = os.environ.get("SHARED_SECRET", "dev-shared-secret-change-me")
-CATALOG_SERVICE_URL = os.environ.get("CATALOG_SERVICE_URL", "http://localhost:5002")
+CATALOG_SERVICE_URL = os.environ.get("CATALOG_SERVICE_URL", "http://localhost:5102")
 CORS_ALLOWED_ORIGIN = os.environ.get("CORS_ALLOWED_ORIGIN", "http://localhost:5173")
 
 VALID_STATUSES = ["pending", "shipped", "delivered", "cancelled"]
@@ -311,4 +311,4 @@ def set_order_status(order_id):
 
 if __name__ == "__main__":
     init_db()
-    app.run(host="0.0.0.0", port=5003)
+    app.run(host="0.0.0.0", port=5103)

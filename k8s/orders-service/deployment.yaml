@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: orders-service
+  namespace: capstone
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: orders-service
+  template:
+    metadata:
+      labels:
+        app: orders-service
+    spec:
+      containers:
+        - name: orders-service
+          image: capstone-orders:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 5103
+          env:
+            - name: SHARED_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: shared-secret
+                  key: SHARED_SECRET
+            - name: CATALOG_SERVICE_URL
+              value: "http://catalog-service:5102"
+            - name: CORS_ALLOWED_ORIGIN
+              value: "http://localhost:8090"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5103
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5103
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "200m"
+              memory: "128Mi"

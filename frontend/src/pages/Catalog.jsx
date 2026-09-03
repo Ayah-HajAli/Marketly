@@ -66,7 +66,7 @@ export default function Catalog() {
         setTotal(data.total);
         setTotalPages(data.total_pages);
       })
-      .catch(() => setError("Could not load products. Is catalog-service running on :5002?"))
+      .catch(() => setError("Could not load products. Is catalog-service running on :5102?"))
       .finally(() => setLoading(false));
   }, [debouncedSearch, category, sort, page]);
 

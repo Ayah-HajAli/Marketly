@@ -18,7 +18,7 @@ export default function Orders() {
     setLoading(true);
     listOrders()
       .then(setOrders)
-      .catch(() => setError("Could not load orders. Is orders-service running on :5003?"))
+      .catch(() => setError("Could not load orders. Is orders-service running on :5103?"))
       .finally(() => setLoading(false));
   }
 

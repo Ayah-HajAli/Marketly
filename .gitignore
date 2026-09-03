@@ -1,0 +1,29 @@
+# Node
+frontend/node_modules/
+frontend/dist/
+npm-debug.log*
+
+# Python
+**/__pycache__/
+*.pyc
+*.pyo
+venv/
+.venv/
+
+# Env files
+.env
+!*.env.example
+
+# OS
+.DS_Store
+
+# Terraform
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+
+# Editor
+.vscode/
+.idea/

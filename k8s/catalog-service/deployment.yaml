@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: catalog-service
+  namespace: capstone
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: catalog-service
+  template:
+    metadata:
+      labels:
+        app: catalog-service
+    spec:
+      containers:
+        - name: catalog-service
+          image: capstone-catalog:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 5102
+          env:
+            - name: SHARED_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: shared-secret
+                  key: SHARED_SECRET
+            - name: CORS_ALLOWED_ORIGIN
+              value: "http://localhost:8090"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5102
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5102
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "200m"
+              memory: "128Mi"

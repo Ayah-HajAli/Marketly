@@ -21,7 +21,7 @@ Run standalone:
     python -m venv venv && source venv/bin/activate
     pip install -r requirements.txt
     python app.py
-Listens on :5001
+Listens on :5101
 """
 import os
 import re
@@ -562,4 +562,4 @@ def change_password():
 
 if __name__ == "__main__":
     init_db()
-    app.run(host="0.0.0.0", port=5001)
+    app.run(host="0.0.0.0", port=5101)
