@@ -1,3 +1,4 @@
+data "aws_caller_identity" "current" {}
 module "vpc" {
   source = "./modules/vpc"
 
@@ -38,12 +39,33 @@ module "ec2_cluster" {
   private_subnet_ids = module.vpc.private_subnet_ids
   k3s_sg_id          = module.security_groups.k3s_sg_id
 }
+module "rds" {
+  source = "./modules/rds"
 
-# rds, alb, iam-oidc
-# modules get added here one at a time, in that order, as we build each one
-# ec2-cluster, rds, alb, iam-oidc
-# modules get added here one at a time, in that order, as we build each one
+  project_name       = var.project_name
+  private_subnet_ids = module.vpc.private_subnet_ids
+  rds_sg_id          = module.security_groups.rds_sg_id
+}
 
-# ecr, ec2-cluster, rds, alb, iam-oidc
-# modules get added here one at a time, in that order, as we build each one
-# modules get added here one at a time, in that order, as we build each one
+module "alb" {
+  source = "./modules/alb"
+
+  project_name              = var.project_name
+  vpc_id                    = module.vpc.vpc_id
+  public_subnet_ids         = module.vpc.public_subnet_ids
+  alb_sg_id                 = module.security_groups.alb_sg_id
+  control_plane_instance_id = module.ec2_cluster.control_plane_instance_id
+  worker_asg_name           = module.ec2_cluster.worker_asg_name
+}
+
+module "iam_oidc" {
+  source = "./modules/iam-oidc"
+
+  project_name               = var.project_name
+  github_owner               = "Ayah-HajAli"
+  github_repo                = "Marketly"
+  control_plane_instance_arn = "arn:aws:ec2:eu-north-1:${data.aws_caller_identity.current.account_id}:instance/${module.ec2_cluster.control_plane_instance_id}"
+  ecr_repository_arns        = values(module.ecr.repository_arns)
+}
+
+

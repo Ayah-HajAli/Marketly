@@ -45,3 +45,22 @@ output "control_plane_instance_id" {
 output "worker_asg_name" {
   value = module.ec2_cluster.worker_asg_name
 }
+output "db_address" {
+  value = module.rds.db_address
+}
+
+output "db_secret_arn" {
+  value = module.rds.secret_arn
+}
+
+output "alb_dns_name" {
+  value = module.alb.alb_dns_name
+}
+
+output "github_ci_role_arn" {
+  value = module.iam_oidc.ci_role_arn
+}
+
+output "github_terraform_role_arn" {
+  value = module.iam_oidc.terraform_role_arn
+}
