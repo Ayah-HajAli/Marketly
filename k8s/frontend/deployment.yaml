@@ -3,34 +3,45 @@ kind: Deployment
 metadata:
   name: frontend
   namespace: capstone
+
 spec:
   replicas: 1
+
   selector:
     matchLabels:
       app: frontend
+
   template:
     metadata:
       labels:
         app: frontend
+
     spec:
+      imagePullSecrets:
+        - name: regcred
+
       containers:
         - name: frontend
-          image: capstone-frontend:latest
-          imagePullPolicy: Never
+          image: 571996361871.dkr.ecr.eu-north-1.amazonaws.com/capstone-frontend:latest
+          imagePullPolicy: Always
+
           ports:
             - containerPort: 80
+
           readinessProbe:
             httpGet:
               path: /
               port: 80
             initialDelaySeconds: 3
             periodSeconds: 5
+
           livenessProbe:
             httpGet:
               path: /
               port: 80
             initialDelaySeconds: 10
             periodSeconds: 10
+
           resources:
             requests:
               cpu: "50m"

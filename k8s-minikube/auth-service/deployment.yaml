@@ -1,61 +1,46 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: catalog-service
+  name: auth-service
   namespace: capstone
-
 spec:
   replicas: 1
-
   selector:
     matchLabels:
-      app: catalog-service
-
+      app: auth-service
   template:
     metadata:
       labels:
-        app: catalog-service
-
+        app: auth-service
     spec:
-      imagePullSecrets:
-        - name: regcred
-
       containers:
-        - name: catalog-service
-          image: 571996361871.dkr.ecr.eu-north-1.amazonaws.com/capstone-catalog-service:latest
-          imagePullPolicy: Always
-
+        - name: auth-service
+          image: capstone-auth:latest
+          imagePullPolicy: Never
           ports:
-            - containerPort: 5102
-
-          envFrom:
-            - secretRef:
-                name: db-credentials
-
+            - containerPort: 5101
           env:
             - name: SHARED_SECRET
               valueFrom:
                 secretKeyRef:
                   name: shared-secret
                   key: SHARED_SECRET
-
             - name: CORS_ALLOWED_ORIGIN
-              value: "http://capstone-alb-127668070.eu-north-1.elb.amazonaws.com"
-
+              value: "http://localhost:8090"
+            - name: COOKIE_SECURE
+              value: "false"
           readinessProbe:
             httpGet:
               path: /health
-              port: 5102
+              port: 5101
             initialDelaySeconds: 3
             periodSeconds: 5
-
           livenessProbe:
             httpGet:
               path: /health
-              port: 5102
+              port: 5101
             initialDelaySeconds: 10
             periodSeconds: 10
-
           resources:
             requests:
               cpu: "50m"

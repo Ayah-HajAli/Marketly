@@ -4,7 +4,7 @@ metadata:
   name: capstone-ingress
   namespace: capstone
 spec:
-  ingressClassName: nginx
+  ingressClassName: traefik
   rules:
     - http:
         paths:
