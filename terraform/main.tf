@@ -1,4 +1,5 @@
 data "aws_caller_identity" "current" {}
+
 module "vpc" {
   source = "./modules/vpc"
 
@@ -20,10 +21,10 @@ module "security_groups" {
 module "nat_instance" {
   source = "./modules/nat-instance"
 
-  project_name           = var.project_name
-  public_subnet_id       = module.vpc.public_subnet_ids[0]
-  nat_sg_id              = module.security_groups.nat_sg_id
-  private_route_table_id = module.vpc.private_route_table_id
+  project_name            = var.project_name
+  public_subnet_id        = module.vpc.public_subnet_ids[0]
+  nat_sg_id               = module.security_groups.nat_sg_id
+  private_route_table_id  = module.vpc.private_route_table_id
 }
 
 module "ecr" {
@@ -32,19 +33,21 @@ module "ecr" {
   project_name = var.project_name
 }
 
-module "ec2_cluster" {
-  source = "./modules/ec2-cluster"
-
-  project_name       = var.project_name
-  private_subnet_ids = module.vpc.private_subnet_ids
-  k3s_sg_id          = module.security_groups.k3s_sg_id
-}
 module "rds" {
   source = "./modules/rds"
 
   project_name       = var.project_name
   private_subnet_ids = module.vpc.private_subnet_ids
   rds_sg_id          = module.security_groups.rds_sg_id
+}
+
+module "ec2_cluster" {
+  source = "./modules/ec2-cluster"
+
+  project_name       = var.project_name
+  private_subnet_ids = module.vpc.private_subnet_ids
+  k3s_sg_id          = module.security_groups.k3s_sg_id
+  rds_secret_arn     = module.rds.secret_arn
 }
 
 module "alb" {
@@ -67,5 +70,3 @@ module "iam_oidc" {
   control_plane_instance_arn = "arn:aws:ec2:eu-north-1:${data.aws_caller_identity.current.account_id}:instance/${module.ec2_cluster.control_plane_instance_id}"
   ecr_repository_arns        = values(module.ecr.repository_arns)
 }
-
-

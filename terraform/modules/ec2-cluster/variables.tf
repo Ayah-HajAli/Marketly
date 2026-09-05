@@ -10,6 +10,11 @@ variable "k3s_sg_id" {
   type = string
 }
 
+variable "rds_secret_arn" {
+  description = "ARN of the Secrets Manager secret holding RDS credentials"
+  type        = string
+}
+
 variable "control_plane_instance_type" {
   type    = string
   default = "t3.small"

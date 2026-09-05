@@ -53,6 +53,30 @@ resource "aws_iam_role_policy" "k3s_node_ssm_params" {
   })
 }
 
+# Lets the cluster nodes fetch the RDS credentials themselves at deploy
+# time, so the real password never has to appear in a human's terminal
+# output or be typed into any file.
+resource "aws_iam_role_policy" "k3s_node_secrets" {
+  name = "${var.project_name}-k3s-secrets-read"
+  role = aws_iam_role.k3s_node.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect   = "Allow"
+      Action   = ["secretsmanager:GetSecretValue"]
+      Resource = var.rds_secret_arn
+    }]
+  })
+}
+
+# Lets the cluster nodes pull images from our private ECR repos, and
+# generate their own short-lived ECR pull tokens for a k8s regcred secret.
+resource "aws_iam_role_policy_attachment" "k3s_node_ecr" {
+  role       = aws_iam_role.k3s_node.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
+}
+
 resource "aws_iam_instance_profile" "k3s_node" {
   name = "${var.project_name}-k3s-node-profile"
   role = aws_iam_role.k3s_node.name

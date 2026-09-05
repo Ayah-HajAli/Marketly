@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: orders-service
+  namespace: capstone
+spec:
+  selector:
+    app: orders-service
+  ports:
+    - port: 5103
+      targetPort: 5103

@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: orders-service
+  namespace: capstone
+
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: orders-service
+
+  template:
+    metadata:
+      labels:
+        app: orders-service
+
+    spec:
+      imagePullSecrets:
+        - name: regcred
+
+      containers:
+        - name: orders-service
+          image: 571996361871.dkr.ecr.eu-north-1.amazonaws.com/capstone-orders-service:latest
+          imagePullPolicy: Always
+
+          ports:
+            - containerPort: 5103
+
+          envFrom:
+            - secretRef:
+                name: db-credentials
+
+          env:
+            - name: SHARED_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: shared-secret
+                  key: SHARED_SECRET
+
+            - name: CATALOG_SERVICE_URL
+              value: "http://catalog-service:5102"
+
+            - name: CORS_ALLOWED_ORIGIN
+              value: "http://capstone-alb-127668070.eu-north-1.elb.amazonaws.com"
+
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5103
+            initialDelaySeconds: 3
+            periodSeconds: 5
+
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5103
+            initialDelaySeconds: 10
+            periodSeconds: 10
+
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "200m"
+              memory: "128Mi"
