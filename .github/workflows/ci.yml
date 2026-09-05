@@ -1,0 +1,90 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  id-token: write   # required for OIDC — no static AWS keys anywhere
+  contents: read
+
+env:
+  AWS_REGION: eu-north-1
+  ECR_REGISTRY: 571996361871.dkr.ecr.eu-north-1.amazonaws.com
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - name: auth-service
+            context: ./services/auth-service
+            repo: capstone-auth-service
+          - name: catalog-service
+            context: ./services/catalog-service
+            repo: capstone-catalog-service
+          - name: orders-service
+            context: ./services/orders-service
+            repo: capstone-orders-service
+          - name: frontend
+            context: ./frontend
+            repo: capstone-frontend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python (for backend tests)
+        if: matrix.name != 'frontend'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run tests (if any exist)
+        if: matrix.name != 'frontend'
+        working-directory: ${{ matrix.context }}
+        run: |
+          if [ -d "tests" ]; then
+            pip install -r requirements.txt
+            pip install pytest
+            pytest tests/
+          else
+            echo "No tests/ directory for ${{ matrix.name }} yet — skipping."
+          fi
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build image (every PR and push, validates the Dockerfile)
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ matrix.context }}
+          platforms: linux/amd64
+          push: false
+          tags: ${{ matrix.repo }}:ci-check
+          load: false
+
+      # Everything below only runs on an actual push to main — PRs never
+      # get AWS credentials or push access.
+      - name: Configure AWS credentials via OIDC
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::571996361871:role/capstone-github-ci-role
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Log in to ECR
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push to ECR
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ matrix.context }}
+          platforms: linux/amd64
+          push: true
+          tags: ${{ env.ECR_REGISTRY }}/${{ matrix.repo }}:latest

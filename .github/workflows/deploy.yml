@@ -1,0 +1,36 @@
+name: Deploy
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+
+jobs:
+  deploy:
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: self-hosted   # the runner registered on the k3s control-plane
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Apply Kubernetes manifests
+        run: |
+          kubectl apply -f k8s/namespace.yaml
+          kubectl apply -f k8s/traefik-nodeport.yaml
+          kubectl apply -f k8s/auth-service/ -f k8s/catalog-service/ -f k8s/orders-service/ -f k8s/frontend/
+          kubectl apply -f k8s/ingress.yaml
+
+      - name: Force fresh pull of :latest images
+        run: |
+          kubectl rollout restart deployment/auth-service deployment/catalog-service deployment/orders-service deployment/frontend -n capstone
+
+      - name: Wait for rollout to complete
+        run: |
+          kubectl rollout status deployment/auth-service -n capstone --timeout=120s
+          kubectl rollout status deployment/catalog-service -n capstone --timeout=120s
+          kubectl rollout status deployment/orders-service -n capstone --timeout=120s
+          kubectl rollout status deployment/frontend -n capstone --timeout=120s
