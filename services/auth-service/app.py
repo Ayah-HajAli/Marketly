@@ -25,7 +25,6 @@ Listens on :5101
 """
 import os
 import re
-import sqlite3
 import secrets
 import hashlib
 import datetime
@@ -33,10 +32,10 @@ import datetime
 import jwt
 from flask import Flask, jsonify, request, make_response
 from werkzeug.security import generate_password_hash, check_password_hash
+from pgcompat import PGConnection
 
 app = Flask(__name__)
 
-DB_PATH = os.environ.get("AUTH_DB_PATH", os.path.join(os.path.dirname(__file__), "users.db"))
 SHARED_SECRET = os.environ.get("SHARED_SECRET", "dev-shared-secret-change-me")
 
 ACCESS_TOKEN_EXP_MINUTES = int(os.environ.get("ACCESS_TOKEN_EXP_MINUTES", "15"))
@@ -148,9 +147,7 @@ def cors_preflight(_unused):
 # --- DB ---
 
 def get_db():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
+    return PGConnection()
 
 
 def init_db():
@@ -158,7 +155,7 @@ def init_db():
     conn.execute(
         """
         CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             username TEXT UNIQUE NOT NULL,
             password_hash TEXT NOT NULL,
             email TEXT,
@@ -172,7 +169,7 @@ def init_db():
     conn.execute(
         """
         CREATE TABLE IF NOT EXISTS refresh_tokens (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             user_id INTEGER NOT NULL,
             token_hash TEXT UNIQUE NOT NULL,
             created_at TEXT NOT NULL,

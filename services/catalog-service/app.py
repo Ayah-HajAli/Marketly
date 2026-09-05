@@ -16,15 +16,14 @@ Run standalone:
 Listens on :5102
 """
 import os
-import sqlite3
 import math
 
 import jwt
 from flask import Flask, jsonify, request
+from pgcompat import PGConnection
 
 app = Flask(__name__)
 
-DB_PATH = os.environ.get("CATALOG_DB_PATH", os.path.join(os.path.dirname(__file__), "catalog.db"))
 SHARED_SECRET = os.environ.get("SHARED_SECRET", "dev-shared-secret-change-me")
 CORS_ALLOWED_ORIGIN = os.environ.get("CORS_ALLOWED_ORIGIN", "http://localhost:5173")
 
@@ -73,9 +72,7 @@ def cors_preflight(_unused=None):
 
 
 def get_db():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
+    return PGConnection()
 
 
 def init_db():
@@ -83,7 +80,7 @@ def init_db():
     conn.execute(
         """
         CREATE TABLE IF NOT EXISTS products (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             name TEXT NOT NULL,
             description TEXT,
             price REAL NOT NULL,
@@ -93,12 +90,7 @@ def init_db():
         )
         """
     )
-    # Backfill columns for anyone upgrading from the old schema.
-    existing_cols = {row["name"] for row in conn.execute("PRAGMA table_info(products)")}
-    if "category" not in existing_cols:
-        conn.execute("ALTER TABLE products ADD COLUMN category TEXT NOT NULL DEFAULT 'General'")
-    if "image_url" not in existing_cols:
-        conn.execute("ALTER TABLE products ADD COLUMN image_url TEXT DEFAULT ''")
+    conn.commit()
 
     count = conn.execute("SELECT COUNT(*) AS c FROM products").fetchone()["c"]
     if count == 0:
@@ -217,7 +209,7 @@ def create_product():
 
     conn = get_db()
     cur = conn.execute(
-        "INSERT INTO products (name, description, price, stock, category, image_url) VALUES (?, ?, ?, ?, ?, ?)",
+        "INSERT INTO products (name, description, price, stock, category, image_url) VALUES (?, ?, ?, ?, ?, ?) RETURNING id",
         (
             name,
             data.get("description", ""),
@@ -228,7 +220,7 @@ def create_product():
         ),
     )
     conn.commit()
-    new_id = cur.lastrowid
+    new_id = cur.fetchone()["id"]
     row = conn.execute("SELECT * FROM products WHERE id = ?", (new_id,)).fetchone()
     conn.close()
     return jsonify(row_to_dict(row)), 201
