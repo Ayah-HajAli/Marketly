@@ -11,9 +11,6 @@ declare -A SERVICES=(
   [orders-service]="5103/health"
 )
 
-# When checking localhost, each service has its own port. When checking
-# a real deployment behind an ingress, they're usually all on the same
-# host — adjust ports to 80/443 in that case by passing paths instead.
 FAILED=0
 
 echo "=== Checking service health at $BASE_URL ==="

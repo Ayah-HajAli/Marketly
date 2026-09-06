@@ -10,7 +10,11 @@ echo "Checking required tools..."
 
 for tool in "${REQUIRED_TOOLS[@]}"; do
   if command -v "$tool" >/dev/null 2>&1; then
-    version_line=$("$tool" --version 2>&1 | head -n 1)
+    if [ "$tool" = "kubectl" ]; then
+      version_line=$(kubectl version --client 2>&1 | head -n 1) || true
+    else
+      version_line=$("$tool" --version 2>&1 | head -n 1) || true
+    fi
     echo "  ✓ $tool found ($version_line)"
   else
     echo "  ✗ $tool NOT FOUND"
